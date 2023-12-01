@@ -38,17 +38,20 @@ func newMods() *gomods {
 func (g *gomods) run(ctx context.Context, args []string) error {
 	go g.executeAll(ctx, args)
 
-	var count int
+	var rels []RelativePath
 	if err := filepath.WalkDir(".", walkDirFn(ctx, func(rel RelativePath) {
 		g.rels <- rel
-		logf("%s/go.mod\n", rel)
-		count++
+		rels = append(rels, rel)
 	})); err != nil {
 		return fmt.Errorf("failed to walk file tree: %w", err)
 	}
 	close(g.rels)
 
-	logf("found %d go.mod files\n", count)
+	slices.Sort(rels)
+	logf("found %d go.mod files:\n", len(rels))
+	for _, rel := range rels {
+		logf("\t%s/go.mod\n", rel)
+	}
 
 	var sorted []*result
 	for r := range g.resCh {

@@ -75,19 +75,19 @@ replace example.com/a/c => ../a/c
 require example.com/a/c v0.0.0-00010101000000-000000000000
 
 -- tidy-err.txt --
-a/c/go.mod
-a/go.mod
-b/go.mod
-found 3 go.mod files
+found 3 go.mod files:
+	a/go.mod
+	a/c/go.mod
+	b/go.mod
 a$ sh -c go mod tidy
 a/c$ sh -c go mod tidy
 b$ sh -c go mod tidy
 -- tidy-out-v.txt --
 -- tidy-err-v.txt --
-a/c/go.mod
-a/go.mod
-b/go.mod
-found 3 go.mod files
+found 3 go.mod files:
+	a/go.mod
+	a/c/go.mod
+	b/go.mod
 a/c/go.mod: module example.com/a/c
 a/go.mod: module example.com/a
 	example.com/a/c => a/c
@@ -112,10 +112,10 @@ b$ sh -c go mod tidy
 	example.com/a/c@v0.0.0-00010101000000-000000000000 go@1.21.3
 	go@1.21.3 toolchain@go1.21.3
 -- graph-err.txt --
-a/c/go.mod
-a/go.mod
-b/go.mod
-found 3 go.mod files
+found 3 go.mod files:
+	a/go.mod
+	a/c/go.mod
+	b/go.mod
 a$ sh -c go mod graph
 a/c$ sh -c go mod graph
 b$ sh -c go mod graph
@@ -134,10 +134,10 @@ b$ sh -c go mod graph
 	example.com/a/c@v0.0.0-00010101000000-000000000000 go@1.21.3
 	go@1.21.3 toolchain@go1.21.3
 -- graph-err-v.txt --
-a/c/go.mod
-a/go.mod
-b/go.mod
-found 3 go.mod files
+found 3 go.mod files:
+	a/go.mod
+	a/c/go.mod
+	b/go.mod
 a/c/go.mod: module example.com/a/c
 a/go.mod: module example.com/a
 	example.com/a/c => a/c
