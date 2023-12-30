@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io/fs"
+	"os"
 	"path/filepath"
 	"slices"
 	"strings"
@@ -63,13 +64,21 @@ func (g *gomods) run(ctx context.Context, args []string) error {
 		}
 	}
 	for _, r := range sorted {
-		logf("%s$ %s\n", r.rel, r.cmd)
-		//OPT r.output.WriteTo()
-		if s := r.output.String(); len(s) > 0 {
-			fmt.Printf("\t")
-			s = strings.ReplaceAll(s, "\n", "\n\t")
-			s = strings.TrimSuffix(s, "\t")
-			fmt.Print(s)
+		_, err := r.logs.WriteTo(os.Stderr)
+		if err != nil {
+			return fmt.Errorf("failed to write logs for %s: %w", r.rel, err)
+		}
+		if r.command != nil {
+			logf("%s$ %s\n", r.rel, r.name)
+			//OPT r.output.WriteTo()
+			if s := r.output.String(); len(s) > 0 {
+				fmt.Printf("\t")
+				s = strings.ReplaceAll(s, "\n", "\n\t")
+				s = strings.TrimSuffix(s, "\t")
+				fmt.Print(s)
+			}
+		} else if r.skipped && verbose {
+			logf("%s (skipped)\n", r.rel)
 		}
 		if r.err != nil {
 			fmt.Printf("\terror: %s", r.err)
@@ -111,58 +120,77 @@ func (g *gomods) verifyResult(dep Dep) error {
 	if res.err != nil {
 		return fmt.Errorf("%s error: %w", rel, res.err)
 	}
+	if res.skipped {
+		return nil // nothing to check since we didn't parse it
+	}
 	if res.mod != mod {
-		return fmt.Errorf("%s: expected module %s but found %s", rel, mod, res.mod)
+		return fmt.Errorf("%s: expected module %q but found %q", rel, mod, res.mod)
 	}
 	return nil
 }
 
 func (g *gomods) executeAll(ctx context.Context, args []string) {
 	defer close(g.resCh)
-	dones := make(doneMap)
+	dones := newDoneChans()
 	var wg sync.WaitGroup
 	for rel := range g.rels {
 		var m module
 		m.rel = rel
-		done := dones.getChan(m.rel)
+		var done func()
+		if !unordered {
+			done = func() { close(dones.getChan(m.rel)) }
+		}
 		if slices.Contains(skips, string(rel)) {
-			g.storeResult(m.newResult(nil))
-			close(done)
-			continue
-		}
-		if err := m.listRelative(ctx); err != nil {
-			g.storeResult(m.newResult(err))
-			close(done)
-			continue
-		}
-		if verbose {
-			logf("%s/go.mod: module %s\n", m.rel, m.mod)
-		}
-
-		if err := m.ensureDones(dones.getChan); err != nil {
-			g.storeResult(m.newResult(err))
-			close(done)
+			r := m.newResult(nil)
+			r.skipped = true
+			g.storeResult(r)
+			done()
 			continue
 		}
 
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			defer close(done)
+			defer done()
 
-			g.storeResult(m.run(ctx, g.verifyResult, args))
+			if unordered {
+				g.storeResult(m.run(ctx, args))
+				return
+			}
+
+			g.storeResult(func() *result {
+				if err := m.listRelative(ctx); err != nil {
+					return m.newResult(err)
+				}
+				if err := m.ensureDones(dones.getChan); err != nil {
+					return m.newResult(err)
+				}
+				if err := m.waitForDeps(ctx, g.verifyResult); err != nil {
+					return m.newResult(err)
+				}
+				return m.run(ctx, args)
+			}())
 		}()
 	}
 	wg.Wait()
 }
 
-type doneMap map[RelativePath]chan struct{}
+type doneChans struct {
+	mu    sync.Mutex
+	chans map[RelativePath]chan struct{}
+}
 
-func (m doneMap) getChan(p RelativePath) chan struct{} {
-	d, ok := m[p]
+func newDoneChans() *doneChans {
+	return &doneChans{chans: map[RelativePath]chan struct{}{}}
+}
+
+func (d *doneChans) getChan(p RelativePath) chan struct{} {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	dc, ok := d.chans[p]
 	if !ok {
-		d = make(chan struct{})
-		m[p] = d
+		dc = make(chan struct{})
+		d.chans[p] = dc
 	}
-	return d
+	return dc
 }
