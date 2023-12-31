@@ -1,0 +1,20 @@
+exec gomods -w go generate ./...
+
+-- a/go.mod --
+module example.com/a
+
+go 1.21.3
+
+-- a/a.go --
+package a
+
+//go:generate echo "hello" > a/hello.txt
+
+-- b/go.mod --
+
+-- b/b.go --
+
+//go:generate cp ../a/hello.txt b/hello-cp.txt
+
+-- hello.txt --
+hello

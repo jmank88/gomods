@@ -88,14 +88,14 @@ found 3 go.mod files:
 	a/go.mod
 	a/c/go.mod
 	b/go.mod
-a/c/go.mod: module example.com/a/c
 a/go.mod: module example.com/a
 	example.com/a/c => a/c
 	example.com/b => b
+a$ go mod tidy
+a/c/go.mod: module example.com/a/c
+a/c$ go mod tidy
 b/go.mod: module example.com/b
 	example.com/a/c => a/c
-a$ go mod tidy
-a/c$ go mod tidy
 b$ go mod tidy
 -- graph-out.txt --
 	example.com/a example.com/a/c@v0.0.0-00010101000000-000000000000
@@ -138,12 +138,12 @@ found 3 go.mod files:
 	a/go.mod
 	a/c/go.mod
 	b/go.mod
-a/c/go.mod: module example.com/a/c
 a/go.mod: module example.com/a
 	example.com/a/c => a/c
 	example.com/b => b
+a$ go mod graph
+a/c/go.mod: module example.com/a/c
+a/c$ go mod graph
 b/go.mod: module example.com/b
 	example.com/a/c => a/c
-a$ go mod graph
-a/c$ go mod graph
 b$ go mod graph

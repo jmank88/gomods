@@ -10,24 +10,26 @@ import (
 )
 
 var (
-	cmdSh   bool
-	force   bool
-	skip    string
-	skips   []string
-	verbose bool
-	without bool
+	cmdSh     bool
+	force     bool
+	skips     []string
+	unordered bool
+	verbose   bool
+	without   bool
 )
 
 func initFlags() {
 	flag.BoolVar(&cmdSh, "c", false, "command: command string execution with 'sh -c' prefix")
 	flag.BoolVar(&force, "f", false, "force: continue execution even if dependencies failed")
 	//TODO -q (quiet)
-	flag.StringVar(&skip, "s", "", "skip: comma separated list of paths to skip")
+	skip := flag.String("s", "", "skip: comma separated list of paths to skip")
+	//TODO -p to limit parallelism?
+	flag.BoolVar(&unordered, "u", false, "unordered: execute without waiting for dependencies")
 	flag.BoolVar(&verbose, "v", false, "verbose: detailed logs")
 	flag.BoolVar(&without, "w", false, "without: without 'go mod' prefix")
 	flag.Parse()
-	skips = strings.Split(skip, ",")
-	//TODO c & w are mutually exclusive
+	skips = strings.Split(*skip, ",")
+	//TODO c & w are mutually exclusive? or can we combine them?
 }
 
 func main() { os.Exit(Main()) }
@@ -35,7 +37,6 @@ func main() { os.Exit(Main()) }
 func Main() (exitCode int) {
 	initFlags()
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
-	//defer stop()
 	go func() {
 		<-ctx.Done()
 		logln("\nCancelling... interrupt again to exit")

@@ -16,30 +16,47 @@ type module struct {
 	deps  []Dep
 	rels  []RelativePath
 	dones []<-chan struct{}
+
+	logs bytes.Buffer
 }
 
 type result struct {
 	Dep
 
-	cmd string
+	logs bytes.Buffer
+
+	skipped bool
+	*command
+
+	err error
+}
+type command struct {
+	name string
 	//TODO separate err/out?
 	output bytes.Buffer
-	err    error
 }
 
 func (m *module) newResult(err error) *result {
-	return &result{Dep: m.Dep, err: err}
+	return &result{Dep: m.Dep, logs: m.logs, err: err}
 }
 
-// listRelative populates s.full, s.mods and s.rels.
+func (m *module) logf(format string, a ...any) {
+	fmt.Fprintf(&m.logs, format, a...)
+}
+
+// listRelative populates m.mod and m.deps.
 func (m *module) listRelative(ctx context.Context) error {
 	list, err := goListAll(ctx, string(m.rel))
 	if err != nil {
-		return fmt.Errorf("failed to list modules: %w", err)
+		return err
 	}
 	for _, l := range list {
 		if l.Main {
 			m.mod = l.Path
+			//TODO but now the log is non-deterministic
+			if verbose { //TODO helpers for these
+				m.logf("%s/go.mod: module %s\n", m.rel, m.mod)
+			}
 			continue
 		}
 		if l.Replace != nil && l.Replace.isRelative() {
@@ -59,7 +76,7 @@ func (m *module) ensureDones(getChan func(RelativePath) chan struct{}) error {
 		if _, err := os.Stat(filepath.Join(string(rel), "go.mod")); err != nil {
 			err = fmt.Errorf("%s go.mod not found: %w", rel, err)
 			if verbose {
-				logf("\t%s\n", err)
+				m.logf("\t%s\n", err)
 			}
 			if force {
 				//TODO log about ignoring?
@@ -69,17 +86,13 @@ func (m *module) ensureDones(getChan func(RelativePath) chan struct{}) error {
 		}
 		m.dones = append(m.dones, getChan(rel))
 		if verbose {
-			//TODO this ends up interveaved...
-			logf("\t%s => %s\n", dep.mod, rel)
+			m.logf("\t%s => %s\n", dep.mod, rel)
 		}
 	}
 	return nil
 }
 
-func (m *module) run(ctx context.Context, verifyResult func(Dep) error, args []string) *result {
-	if err := m.waitForDeps(ctx, verifyResult); err != nil {
-		return m.newResult(err)
-	}
+func (m *module) run(ctx context.Context, args []string) *result {
 	if len(args) == 0 { //TODO or dry run (-n?)
 		return m.newResult(nil)
 	}
@@ -97,7 +110,7 @@ func (m *module) waitForDeps(ctx context.Context, confirmResult func(Dep) error)
 			dep := m.deps[i]
 			if err := confirmResult(dep); err != nil {
 				if force {
-					logf("\tignoring: %s\n", err)
+					m.logf("\tignoring: %s\n", err)
 					continue
 				}
 				return err
@@ -121,10 +134,11 @@ func (m *module) execute(ctx context.Context, args []string) *result {
 		cmd.Args = append(cmd.Args, args...)
 	}
 	cmd.Dir = string(m.rel)
+	r.command = new(command)
 	cmd.Stdout = &r.output
 	cmd.Stderr = &r.output
 
-	r.cmd = strings.Join(cmd.Args, " ")
-	r.err = cmd.Run()
+	r.name = strings.Join(cmd.Args, " ")
+	r.err = cmd.Run() //TODO why not just CombinedOutput?
 	return r
 }

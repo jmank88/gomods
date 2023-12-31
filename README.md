@@ -6,7 +6,13 @@ CLI tool to execute a command on every go module in the tree
 ```shell
 $ gomods download
 $ gomods tidy
-$ gomods -e go generate ./...
-$ gomods -e go test ./...
-$ gomods -e cat go.mod
+$ gomods list
+$ gomods graph
+```
+
+## w/o go mod
+```shell
+$ gomods -w go generate ./...
+$ gomods -w go test ./...
+$ gomods -w cat go.mod
 ```
