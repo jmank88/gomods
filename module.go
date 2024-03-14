@@ -53,8 +53,7 @@ func (m *module) listRelative(ctx context.Context) error {
 	for _, l := range list {
 		if l.Main {
 			m.mod = l.Path
-			//TODO but now the log is non-deterministic
-			if verbose { //TODO helpers for these
+			if verbose {
 				m.logf("%s/go.mod: module %s\n", m.rel, m.mod)
 			}
 			continue
