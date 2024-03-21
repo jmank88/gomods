@@ -81,7 +81,7 @@ func (g *gomods) run(ctx context.Context, args []string) error {
 			logf("%s (skipped)\n", r.rel)
 		}
 		if r.err != nil {
-			fmt.Printf("\terror: %s", r.err)
+			fmt.Printf("\terror: %s\n", r.err)
 		}
 	}
 	return ctx.Err()

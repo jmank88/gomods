@@ -1,0 +1,14 @@
+exec gomods
+cmp stdout list-out.txt
+cmp stderr list-err.txt
+
+-- go.mod --
+module example.com/example
+
+invalid ( format )
+
+-- list-out.txt --
+	error: failed to list modules: exit status 1
+-- list-err.txt --
+found 1 go.mod files:
+	./go.mod
