@@ -1,4 +1,8 @@
 exec gomods -w go generate ./...
+exists a/hello.txt
+cmp hello.txt a/hello.txt
+exists b/hello.txt
+cmp hello.txt b/hello.txt
 
 -- a/go.mod --
 module example.com/a
@@ -8,13 +12,21 @@ go 1.21.3
 -- a/a.go --
 package a
 
-//go:generate echo "hello" > a/hello.txt
+//go:generate cp ../hello.txt hello.txt
 
 -- b/go.mod --
+module example.com/b
+
+go 1.21.3
+
+replace example.com/a => ../a
+
+require example.com/a v0.0.0-00010101000000-000000000000
 
 -- b/b.go --
+package b
 
-//go:generate cp ../a/hello.txt b/hello-cp.txt
+//go:generate cp ../a/hello.txt hello.txt
 
 -- hello.txt --
 hello

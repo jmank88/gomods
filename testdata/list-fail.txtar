@@ -1,4 +1,4 @@
-exec gomods
+! exec gomods
 cmp stdout list-out.txt
 cmp stderr list-err.txt
 
@@ -7,8 +7,38 @@ module example.com/example
 
 invalid ( format )
 
+-- example.go --
+package example
+
+const Foo = "bar"
+
+-- other/go.mod --
+module example.com/example/other
+
+replace example.com/example => ../
+require example.com/example v0.0.0-00010101000000-000000000000
+
+-- other/other.go --
+package other
+
+import "example.com/example"
+
+var _ string = example.Foo
+
 -- list-out.txt --
-	error: failed to list modules: exit status 1
+	error: failed to list modules: exit status 1: go: errors parsing go.mod:
+go.mod:3: unknown directive: invalid
+
+	error: . error: failed to list modules: exit status 1: go: errors parsing go.mod:
+go.mod:3: unknown directive: invalid
+
 -- list-err.txt --
-found 1 go.mod files:
+found 2 go.mod files:
 	./go.mod
+	other/go.mod
+error: .: failed to list modules: exit status 1: go: errors parsing go.mod:
+go.mod:3: unknown directive: invalid
+
+other: . error: failed to list modules: exit status 1: go: errors parsing go.mod:
+go.mod:3: unknown directive: invalid
+

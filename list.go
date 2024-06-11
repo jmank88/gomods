@@ -19,6 +19,10 @@ func goListAll(ctx context.Context, dir string) (ms []Module, err error) {
 	cmd.Dir = dir
 	b, err := cmd.Output()
 	if err != nil {
+		var exitErr *exec.ExitError
+		if errors.As(err, &exitErr) {
+			err = fmt.Errorf("%w: %s", err, exitErr.Stderr)
+		}
 		err = fmt.Errorf("failed to list modules: %w", err)
 		return
 	}
