@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io/fs"
 	"os"
@@ -63,6 +64,7 @@ func (g *gomods) run(ctx context.Context, args []string) error {
 			sorted = slices.Insert(sorted, i, r)
 		}
 	}
+	var errs error
 	for _, r := range sorted {
 		_, err := r.logs.WriteTo(os.Stderr)
 		if err != nil {
@@ -82,9 +84,10 @@ func (g *gomods) run(ctx context.Context, args []string) error {
 		}
 		if r.err != nil {
 			fmt.Printf("\terror: %s\n", r.err)
+			errs = errors.Join(errs, fmt.Errorf("%s: %w", r.rel, r.err))
 		}
 	}
-	return ctx.Err()
+	return errs
 }
 
 // walkDirFn call fn for each RelativePath with a go.mod file.
