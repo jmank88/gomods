@@ -45,23 +45,22 @@ func (m *module) logf(format string, a ...any) {
 }
 
 // listRelative populates m.mod and m.deps.
-func (m *module) listRelative(ctx context.Context) error {
-	list, err := goListAll(ctx, string(m.rel))
+func (m *module) listRelative() error {
+	mf, err := modFile(string(m.rel))
 	if err != nil {
 		return err
 	}
-	for _, l := range list {
-		if l.Main {
-			m.mod = l.Path
-			if verbose {
-				m.logf("%s/go.mod: module %s\n", m.rel, m.mod)
-			}
-			continue
+	if mf.Module != nil {
+		m.mod = ModulePath(mf.Module.Mod.Path)
+		if verbose {
+			m.logf("%s/go.mod: module %s\n", m.rel, m.mod)
 		}
-		if l.Replace != nil && l.Replace.isRelative() {
+	}
+	for _, l := range mf.Replace {
+		if isRelativePath(l.New.Path) {
 			m.deps = append(m.deps, Dep{
-				rel: RelativePath(filepath.Join(string(m.rel), l.Replace.Path)),
-				mod: l.Path,
+				rel: RelativePath(filepath.Join(string(m.rel), l.New.Path)),
+				mod: ModulePath(l.Old.Path),
 			})
 		}
 	}

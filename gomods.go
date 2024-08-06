@@ -162,7 +162,7 @@ func (g *gomods) executeAll(ctx context.Context, args []string) {
 			}
 
 			g.storeResult(func() *result {
-				if err := m.listRelative(ctx); err != nil {
+				if err := m.listRelative(); err != nil {
 					return m.newResult(err)
 				}
 				if err := m.ensureDones(dones.getChan); err != nil {

@@ -26,19 +26,11 @@ import "example.com/example"
 var _ string = example.Foo
 
 -- list-out.txt --
-	error: failed to list modules: exit status 1: go: errors parsing go.mod:
-go.mod:3: unknown directive: invalid
-
-	error: . error: failed to list modules: exit status 1: go: errors parsing go.mod:
-go.mod:3: unknown directive: invalid
-
+	error: failed to parse go.mod file: go.mod:3: unknown directive: invalid
+	error: . error: failed to parse go.mod file: go.mod:3: unknown directive: invalid
 -- list-err.txt --
 found 2 go.mod files:
 	./go.mod
 	other/go.mod
-error: .: failed to list modules: exit status 1: go: errors parsing go.mod:
-go.mod:3: unknown directive: invalid
-
-other: . error: failed to list modules: exit status 1: go: errors parsing go.mod:
-go.mod:3: unknown directive: invalid
-
+error: .: failed to parse go.mod file: go.mod:3: unknown directive: invalid
+other: . error: failed to parse go.mod file: go.mod:3: unknown directive: invalid
