@@ -1,0 +1,25 @@
+exec gomods tidy
+cmp go.mod tidy.go.mod
+
+-- go.mod --
+module example.com/a
+
+go 1.21.3
+
+require github.com/jmank88/gomods de9af12e0161b51eb708539ec9d9c67087fc872e
+
+-- main.go --
+package main
+
+import "github.com/jmank88/gomods"
+
+func main() { gomods.FakeType }
+
+-- tidy.go.mod --
+module example.com/a
+
+go 1.21.3
+
+require github.com/jmank88/gomods v0.1.1
+
+require github.com/go-json-experiment/json v0.0.0-20231102232822-2e55bd4e08b0 // indirect
