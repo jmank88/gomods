@@ -115,6 +115,9 @@ func (g *gomods) storeResult(r *result) {
 // verifyResult returns an error if a result for rel cannot be found, contains an error, or has an unexpected ModulePath.
 func (g *gomods) verifyResult(dep Dep) error {
 	rel, mod := dep.rel, dep.mod
+	if !filepath.IsLocal(string(rel)) {
+		return nil // nothing to check
+	}
 	v, ok := g.resMap.Load(rel)
 	if !ok {
 		return fmt.Errorf("%s is missing", rel)
@@ -193,6 +196,9 @@ func (d *doneChans) getChan(p RelativePath) chan struct{} {
 	dc, ok := d.chans[p]
 	if !ok {
 		dc = make(chan struct{})
+		if !filepath.IsLocal(string(p)) {
+			close(dc)
+		}
 		d.chans[p] = dc
 	}
 	return dc

@@ -14,7 +14,6 @@ type module struct {
 	Dep
 
 	deps  []Dep
-	rels  []RelativePath
 	dones []<-chan struct{}
 
 	logs bytes.Buffer
@@ -103,7 +102,7 @@ func (m *module) waitForDeps(ctx context.Context, confirmResult func(Dep) error)
 	for i, done := range m.dones {
 		select {
 		case <-ctx.Done():
-			return fmt.Errorf("stopped waiting for %s: %w", m.rels[i], ctx.Err())
+			return fmt.Errorf("stopped waiting for deps of %s: %w", m.rel, ctx.Err())
 		case <-done:
 			dep := m.deps[i]
 			if err := confirmResult(dep); err != nil {
