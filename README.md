@@ -7,6 +7,8 @@ $ gomods --help
 Usage of gomods:
   -c    command: command string execution with 'sh -c' prefix
   -f    force: continue execution even if dependencies failed
+  -go
+        go: execute with 'go' prefix
   -s string
         skip: comma separated list of paths to skip
   -u    unordered: execute without waiting for dependencies
@@ -27,4 +29,11 @@ $ gomods graph
 $ gomods -w go generate ./...
 $ gomods -w go test ./...
 $ gomods -w cat go.mod
+```
+
+## w/ go
+```shell
+$ gomods -go generate ./...
+$ gomods -go build ./...
+$ gomods -go test ./...
 ```
