@@ -1,0 +1,19 @@
+! exec gomods -c -go -w
+cmp stdout out.txt
+cmp stderr err.txt
+
+! exec gomods -c -go
+cmp stdout out.txt
+cmp stderr err.txt
+
+! exec gomods -c -w
+cmp stdout out.txt
+cmp stderr err.txt
+
+! exec gomods -go -w
+cmp stdout out.txt
+cmp stderr err.txt
+
+-- out.txt --
+-- err.txt --
+Invalid flags: only one of -c, -go, or -w may be used at a time

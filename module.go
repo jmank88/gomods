@@ -123,6 +123,8 @@ func (m *module) execute(ctx context.Context, args []string) *result {
 	var cmd *exec.Cmd
 	if without {
 		cmd = exec.CommandContext(ctx, args[0], args[1:]...)
+	} else if goCmd {
+		cmd = exec.CommandContext(ctx, "go", args...)
 	} else if cmdSh {
 		cmd = exec.CommandContext(ctx, "sh", "-c")
 		cmd.Args = append(cmd.Args, args...)
