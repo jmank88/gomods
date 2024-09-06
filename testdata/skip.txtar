@@ -78,5 +78,5 @@ found 3 go.mod files:
 	b/go.mod
 a (skipped)
 a/c (skipped)
-b/go.mod: module example.com/b
+module example.com/b
 	example.com/a/c => a/c
