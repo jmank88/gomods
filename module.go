@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -16,13 +17,13 @@ type module struct {
 	deps  []Dep
 	dones []<-chan struct{}
 
-	logs bytes.Buffer
+	logs *bytes.Buffer // optional
 }
 
 type result struct {
 	Dep
 
-	logs bytes.Buffer
+	logs *bytes.Buffer // optional
 
 	skipped bool
 	*command
@@ -32,7 +33,11 @@ type result struct {
 type command struct {
 	name string
 	//TODO separate err/out?
-	output bytes.Buffer
+	output bytes.Buffer // nil if liveLogs
+}
+
+func (m *module) prefix() string {
+	return fmt.Sprintf("[%s] ", m.rel)
 }
 
 func (m *module) newResult(err error) *result {
@@ -40,7 +45,11 @@ func (m *module) newResult(err error) *result {
 }
 
 func (m *module) logf(format string, a ...any) {
-	fmt.Fprintf(&m.logs, format, a...)
+	if m.logs != nil {
+		fmt.Fprintf(m.logs, format, a...)
+		return
+	}
+	logf(m.prefix()+format, a...)
 }
 
 // listRelative populates m.mod and m.deps.
@@ -52,7 +61,7 @@ func (m *module) listRelative() error {
 	if mf.Module != nil {
 		m.mod = ModulePath(mf.Module.Mod.Path)
 		if verbose {
-			m.logf("%s/go.mod: module %s\n", m.rel, m.mod)
+			m.logf("module %s\n", m.mod)
 		}
 	}
 	for _, l := range mf.Replace {
@@ -137,10 +146,48 @@ func (m *module) execute(ctx context.Context, args []string) *result {
 	}
 	cmd.Dir = string(m.rel)
 	r.command = new(command)
-	cmd.Stdout = &r.output
-	cmd.Stderr = &r.output
+	if !liveLogs {
+		cmd.Stdout = &r.output
+		cmd.Stderr = &r.output
+	} else {
+		//TODO separate err/out prefixes?
+		p := &prefixer{prefix: m.prefix(), w: os.Stderr}
+		cmd.Stdout = p
+		cmd.Stderr = p
+	}
 
 	r.name = strings.Join(cmd.Args, " ")
 	r.err = cmd.Run() //TODO why not just CombinedOutput?
 	return r
+}
+
+type prefixer struct {
+	w             io.Writer
+	prefix        string
+	buf           bytes.Buffer
+	newLineSuffix bool
+}
+
+func (p *prefixer) Write(bs []byte) (int, error) {
+	p.buf.Reset()
+	if p.newLineSuffix {
+		p.buf.WriteString(p.prefix)
+		p.newLineSuffix = false
+	}
+	for i, b := range bs {
+		p.buf.WriteByte(b)
+		if b == '\n' {
+			if i == len(bs)-1 {
+				p.newLineSuffix = true
+			} else {
+				p.buf.WriteString(p.prefix)
+			}
+		}
+	}
+	n64, err := p.buf.WriteTo(p.w)
+	if err != nil {
+		n := max(int(n64), len(bs))
+		return n, err
+	}
+	return len(bs), nil
 }

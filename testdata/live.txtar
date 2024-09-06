@@ -1,0 +1,42 @@
+exec gomods -live -w cat fake-logs.txt
+cmp stdout out.txt
+cmp stderr err.txt
+
+exec gomods -live -v -w cat fake-logs.txt
+cmp stdout out-v.txt
+cmp stderr err-v.txt
+
+-- this/is/a/long/path/to/module/go.mod --
+module example.com/go-module
+
+go 1.21.3
+
+-- this/is/a/long/path/to/module/module.go --
+package module
+
+const Var = "test"
+
+-- out.txt --
+-- err.txt --
+found 1 go.mod files:
+	this/is/a/long/path/to/module/go.mod
+This is a log message
+[this/is/a/long/path/to/module] This one is structured but human readable foo=42 err="something happened"
+[this/is/a/long/path/to/module] {"msg":"This line is json", "foo":42, "err":"something happened"}
+[this/is/a/long/path/to/module] What about very very very very very very very very very very very very very very very very very very very very very very very very long lines, or long woooooooooooooooooooorrrrrrrrrrrrrrrrrrrrrrrrrrdddddddddddddddddddddddddddddddssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss
+this/is/a/long/path/to/module$ cat fake-logs.txt
+-- out-v.txt --
+-- err-v.txt --
+found 1 go.mod files:
+	this/is/a/long/path/to/module/go.mod
+[this/is/a/long/path/to/module] module example.com/go-module
+This is a log message
+[this/is/a/long/path/to/module] This one is structured but human readable foo=42 err="something happened"
+[this/is/a/long/path/to/module] {"msg":"This line is json", "foo":42, "err":"something happened"}
+[this/is/a/long/path/to/module] What about very very very very very very very very very very very very very very very very very very very very very very very very long lines, or long woooooooooooooooooooorrrrrrrrrrrrrrrrrrrrrrrrrrdddddddddddddddddddddddddddddddssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss
+this/is/a/long/path/to/module$ cat fake-logs.txt
+-- this/is/a/long/path/to/module/fake-logs.txt --
+This is a log message
+This one is structured but human readable foo=42 err="something happened"
+{"msg":"This line is json", "foo":42, "err":"something happened"}
+What about very very very very very very very very very very very very very very very very very very very very very very very very long lines, or long woooooooooooooooooooorrrrrrrrrrrrrrrrrrrrrrrrrrdddddddddddddddddddddddddddddddssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss
