@@ -70,6 +70,9 @@ func (m *module) listRelative() error {
 func (m *module) ensureDones(getChan func(RelativePath) chan struct{}) error {
 	for _, dep := range m.deps {
 		rel := dep.rel
+		if rel == m.rel {
+			continue // ignore self-references
+		}
 		if _, err := os.Stat(filepath.Join(string(rel), "go.mod")); err != nil {
 			err = fmt.Errorf("%s go.mod not found: %w", rel, err)
 			if verbose {
