@@ -1,0 +1,151 @@
+exec gomods tidy
+! stdout .
+cmp stderr tidy-err.txt
+
+exec gomods -v tidy
+cmp stdout tidy-out-v.txt
+cmp stderr tidy-err-v.txt
+
+exec gomods graph
+cmp stdout graph-out.txt
+cmp stderr graph-err.txt
+
+exec gomods -v graph
+cmp stdout graph-out-v.txt
+cmp stderr graph-err-v.txt
+
+-- a/a.go --
+package a
+
+import (
+	"example.com/a/c"
+	"example.com/b"
+)
+
+var (
+	_ = b.Foo
+	_ = c.Baz
+)
+
+-- a/go.mod --
+module example.com/a
+
+go 1.21.3
+
+replace (
+	example.com/a/c => ./c
+	example.com/b => ../b
+)
+
+require (
+	example.com/a/c v0.0.0-00010101000000-000000000000
+	example.com/b v0.0.0-00010101000000-000000000000
+)
+
+replace example.net/a => ./
+
+-- a/c/c.go --
+package c
+
+const Baz = "baz"
+
+-- a/c/go.mod --
+module example.com/a/c
+
+go 1.21.3
+
+-- b/b.go --
+package b
+
+import (
+	"example.com/a/c"
+)
+
+const Foo = "bar"
+
+const (
+	_ = c.Baz
+)
+
+-- b/go.mod --
+module example.com/b
+
+go 1.21.3
+
+replace example.com/a/c => ../a/c
+
+require example.com/a/c v0.0.0-00010101000000-000000000000
+
+-- tidy-err.txt --
+found 3 go.mod files:
+	a/go.mod
+	a/c/go.mod
+	b/go.mod
+a$ go mod tidy
+a/c$ go mod tidy
+b$ go mod tidy
+-- tidy-out-v.txt --
+-- tidy-err-v.txt --
+found 3 go.mod files:
+	a/go.mod
+	a/c/go.mod
+	b/go.mod
+a/go.mod: module example.com/a
+	example.com/a/c => a/c
+	example.com/b => b
+a$ go mod tidy
+a/c/go.mod: module example.com/a/c
+a/c$ go mod tidy
+b/go.mod: module example.com/b
+	example.com/a/c => a/c
+b$ go mod tidy
+-- graph-out.txt --
+	example.com/a example.com/a/c@v0.0.0-00010101000000-000000000000
+	example.com/a example.com/b@v0.0.0-00010101000000-000000000000
+	example.com/a go@1.21.3
+	example.com/a/c@v0.0.0-00010101000000-000000000000 go@1.21.3
+	example.com/b@v0.0.0-00010101000000-000000000000 example.com/a/c@v0.0.0-00010101000000-000000000000
+	example.com/b@v0.0.0-00010101000000-000000000000 go@1.21.3
+	go@1.21.3 toolchain@go1.21.3
+	example.com/a/c go@1.21.3
+	go@1.21.3 toolchain@go1.21.3
+	example.com/b example.com/a/c@v0.0.0-00010101000000-000000000000
+	example.com/b go@1.21.3
+	example.com/a/c@v0.0.0-00010101000000-000000000000 go@1.21.3
+	go@1.21.3 toolchain@go1.21.3
+-- graph-err.txt --
+found 3 go.mod files:
+	a/go.mod
+	a/c/go.mod
+	b/go.mod
+a$ go mod graph
+a/c$ go mod graph
+b$ go mod graph
+-- graph-out-v.txt --
+	example.com/a example.com/a/c@v0.0.0-00010101000000-000000000000
+	example.com/a example.com/b@v0.0.0-00010101000000-000000000000
+	example.com/a go@1.21.3
+	example.com/a/c@v0.0.0-00010101000000-000000000000 go@1.21.3
+	example.com/b@v0.0.0-00010101000000-000000000000 example.com/a/c@v0.0.0-00010101000000-000000000000
+	example.com/b@v0.0.0-00010101000000-000000000000 go@1.21.3
+	go@1.21.3 toolchain@go1.21.3
+	example.com/a/c go@1.21.3
+	go@1.21.3 toolchain@go1.21.3
+	example.com/b example.com/a/c@v0.0.0-00010101000000-000000000000
+	example.com/b go@1.21.3
+	example.com/a/c@v0.0.0-00010101000000-000000000000 go@1.21.3
+	go@1.21.3 toolchain@go1.21.3
+-- graph-err-v.txt --
+found 3 go.mod files:
+	a/go.mod
+	a/c/go.mod
+	b/go.mod
+a/go.mod: module example.com/a
+	example.com/a/c => a/c
+	example.com/b => b
+a$ go mod graph
+a/c/go.mod: module example.com/a/c
+a/c$ go mod graph
+b/go.mod: module example.com/b
+	example.com/a/c => a/c
+b$ go mod graph
