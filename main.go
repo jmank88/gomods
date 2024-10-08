@@ -13,6 +13,7 @@ var (
 	cmdSh     bool
 	force     bool
 	goCmd     bool
+	liveLogs  bool
 	skips     []string
 	unordered bool
 	verbose   bool
@@ -23,6 +24,7 @@ func initFlags() {
 	flag.BoolVar(&cmdSh, "c", false, "command: command string execution with 'sh -c' prefix")
 	flag.BoolVar(&force, "f", false, "force: continue execution even if dependencies failed")
 	flag.BoolVar(&goCmd, "go", false, "go: execute with 'go' prefix")
+	flag.BoolVar(&liveLogs, "live", false, "live: enable live logging")
 	//TODO -q (quiet)
 	skip := flag.String("s", "", "skip: comma separated list of paths to skip")
 	//TODO -p to limit parallelism?
