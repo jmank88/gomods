@@ -77,7 +77,7 @@ found 2 go.mod files:
 found 2 go.mod files:
 	./go.mod
 	c/go.mod
-./go.mod: module example.com/a
+module example.com/a
 	example.com/a/c => c
 	example.com/b => ../b
-c/go.mod: module example.com/a/c
+module example.com/a/c
