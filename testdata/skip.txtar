@@ -1,8 +1,8 @@
-exec gomods -s a,a/c,b
+exec gomods -s a,b
 ! stdout .
 cmp stderr err.txt
 
-exec gomods -s a,a/c -v
+exec gomods -s a -v
 ! stdout .
 cmp stderr err-v.txt
 

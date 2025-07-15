@@ -30,7 +30,9 @@ func initFlags() {
 	flag.BoolVar(&verbose, "v", false, "verbose: detailed logs")
 	flag.BoolVar(&without, "w", false, "without: without 'go mod' prefix")
 	flag.Parse()
-	skips = strings.Split(*skip, ",")
+	if str := strings.TrimSpace(*skip); str != "" {
+		skips = strings.Split(str, ",")
+	}
 	if countBools(cmdSh, goCmd, without) > 1 {
 		logln("Invalid flags: only one of -c, -go, or -w may be used at a time")
 		os.Exit(1)
