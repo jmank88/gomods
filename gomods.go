@@ -146,7 +146,9 @@ func (g *gomods) executeAll(ctx context.Context, args []string) {
 		if !unordered {
 			done = func() { close(dones.getChan(m.rel)) }
 		}
-		if slices.Contains(skips, string(rel)) {
+		if slices.ContainsFunc(skips, func(pre string) bool {
+			return strings.HasPrefix(string(rel), pre)
+		}) {
 			r := m.newResult(nil)
 			r.skipped = true
 			g.storeResult(r)
