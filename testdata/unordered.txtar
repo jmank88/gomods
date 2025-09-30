@@ -1,0 +1,70 @@
+exec gomods -u
+cmp stdout out.txt
+cmp stderr err.txt
+
+-- a/a.go --
+package a
+
+import (
+	"example.com/a/c"
+	"example.com/b"
+)
+
+var (
+	_ = b.Foo
+	_ = c.Baz
+)
+
+-- a/go.mod --
+module example.com/a
+
+go 1.21.3
+
+replace (
+	example.com/a/c => ./c
+	example.com/b => ../b
+)
+
+require (
+	example.com/a/c v0.0.0-00010101000000-000000000000
+	example.com/b v0.0.0-00010101000000-000000000000
+)
+
+-- a/c/c.go --
+package c
+
+const Baz = "baz"
+
+-- a/c/go.mod --
+module example.com/a/c
+
+go 1.21.3
+
+-- b/b.go --
+package b
+
+import (
+	"example.com/a/c"
+)
+
+const Foo = "bar"
+
+const (
+	_ = c.Baz
+)
+
+-- b/go.mod --
+module example.com/b
+
+go 1.21.3
+
+replace example.com/a/c => ../a/c
+
+require example.com/a/c v0.0.0-00010101000000-000000000000
+
+-- out.txt --
+-- err.txt --
+found 3 go.mod files:
+	a/go.mod
+	a/c/go.mod
+	b/go.mod
