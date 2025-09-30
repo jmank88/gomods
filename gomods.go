@@ -159,13 +159,13 @@ func (g *gomods) executeAll(ctx context.Context, args []string) {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			defer done()
 
 			if unordered {
 				g.storeResult(m.run(ctx, args))
 				return
 			}
 
+			defer done()
 			g.storeResult(func() *result {
 				if err := m.listRelative(); err != nil {
 					return m.newResult(err)
