@@ -8,6 +8,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"time"
 )
 
 type module struct {
@@ -103,17 +104,21 @@ func (m *module) run(ctx context.Context, args []string) *result {
 // in which case it will return early. In force mode, errors are ignored.
 func (m *module) waitForDeps(ctx context.Context, confirmResult func(Dep) error) error {
 	for i, done := range m.dones {
-		select {
-		case <-ctx.Done():
-			return fmt.Errorf("stopped waiting for deps of %s: %w", m.rel, ctx.Err())
-		case <-done:
-			dep := m.deps[i]
-			if err := confirmResult(dep); err != nil {
-				if force {
-					m.logf("\tignoring: %s\n", err)
-					continue
+		for {
+			select {
+			case <-ctx.Done():
+				return fmt.Errorf("stopped waiting for deps of %s: %w", m.rel, ctx.Err())
+			case <-done:
+				dep := m.deps[i]
+				if err := confirmResult(dep); err != nil {
+					if force {
+						m.logf("\tignoring: %s\n", err)
+						continue
+					}
+					return err
 				}
-				return err
+			case <-time.After(wait):
+				logf("waiting for dep %s of %s timed out\n", m.deps[i].rel, m.rel)
 			}
 		}
 	}
@@ -141,6 +146,7 @@ func (m *module) execute(ctx context.Context, args []string) *result {
 	cmd.Stderr = &r.output
 
 	r.name = strings.Join(cmd.Args, " ")
+
 	r.err = cmd.Run() //TODO why not just CombinedOutput?
 	return r
 }
