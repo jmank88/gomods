@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/signal"
 	"strings"
+	"time"
 )
 
 var (
@@ -17,6 +18,7 @@ var (
 	unordered bool
 	verbose   bool
 	without   bool
+	wait      time.Duration
 )
 
 func initFlags() {
@@ -29,6 +31,7 @@ func initFlags() {
 	flag.BoolVar(&unordered, "u", false, "unordered: execute without waiting for dependencies")
 	flag.BoolVar(&verbose, "v", false, "verbose: detailed logs")
 	flag.BoolVar(&without, "w", false, "without: without 'go mod' prefix")
+	flag.DurationVar(&wait, "wait", 1*time.Minute, "wait: duration to wait for dependencies")
 	flag.Parse()
 	if str := strings.TrimSpace(*skip); str != "" {
 		skips = strings.Split(str, ",")
