@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -66,18 +67,23 @@ func (g *gomods) run(ctx context.Context, args []string) error {
 	}
 	var errs error
 	for _, r := range sorted {
-		_, err := r.logs.WriteTo(os.Stderr)
-		if err != nil {
-			return fmt.Errorf("failed to write logs for %s: %w", r.rel, err)
+		if !liveLogs {
+			//TODO prefix with rel?
+			_, err := r.logs.WriteTo(os.Stderr)
+			if err != nil {
+				return fmt.Errorf("failed to write logs for %s: %w", r.rel, err)
+			}
 		}
 		if r.command != nil {
 			logf("%s$ %s\n", r.rel, r.name)
-			//OPT r.output.WriteTo()
-			if s := r.output.String(); len(s) > 0 {
-				fmt.Printf("\t")
-				s = strings.ReplaceAll(s, "\n", "\n\t")
-				s = strings.TrimSuffix(s, "\t")
-				fmt.Print(s)
+			if !liveLogs {
+				//OPT r.output.WriteTo() w/ prefixWriter
+				if s := r.output.String(); len(s) > 0 {
+					fmt.Printf("\t")
+					s = strings.ReplaceAll(s, "\n", "\n\t")
+					s = strings.TrimSuffix(s, "\t")
+					fmt.Print(s)
+				}
 			}
 		} else if r.skipped && verbose {
 			logf("%s (skipped)\n", r.rel)
@@ -141,6 +147,9 @@ func (g *gomods) executeAll(ctx context.Context, args []string) {
 	var wg sync.WaitGroup
 	for rel := range g.rels {
 		var m module
+		if !liveLogs {
+			m.logs = &bytes.Buffer{}
+		}
 		m.rel = rel
 		var done func()
 		if !unordered {
